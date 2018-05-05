@@ -1,6 +1,6 @@
-# y
+# Tag-board
 
-> A Vue.js project
+> A powerful and friendly tool for tagging images
 
 ## Build Setup
 
