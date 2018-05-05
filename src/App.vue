@@ -18,7 +18,7 @@
               <div class="spot-wrapper">
                 <i class="spot" id="spot" v-for="i in 8" :key="i" @mousedown.stop="clickSpot($event, i, item)"></i>
               </div>
-              <div class="em-wrapper" v-show="showShade">
+              <div class="em-wrapper" v-show="showShade && activeIndex === index">
                 <div class="em" v-for="i in 4" :key="i"></div>
               </div>
             </div>
@@ -52,6 +52,7 @@
   let isMouseDown = false
   let moveTag = false
   let moveSpot = false
+  let newTag = false
   let obj = {} // 鼠标click的位置
   let oldTag = {}
   let tagItem = {}
@@ -111,12 +112,8 @@
         isMouseDown = true
         this.showMenu = false
         this.showShade = true
-        if (this.activeIndex === i) {
-          moveTag = true
-        } else {
-          this.activeIndex = i
-          return
-        }
+        moveTag = true
+        this.activeIndex = i
         let t = this.$refs.tagContent
         obj = {
           x: this._offset(t).left,
@@ -159,8 +156,7 @@
           if (tagItem.x > 1) {
             tagItem.x = 1
           }
-        }
-        if (moveSpot && isMouseDown) {
+        } else if (moveSpot && isMouseDown) {
           if (spotIndex === 1) {
             if (oldTag.x > oldTag.ex) {
               tagItem.ex = oldTag.ex + (e.clientX - obj.cx) / obj.w
@@ -230,6 +226,31 @@
               tagItem.ey = oldTag.ey + (e.clientY - obj.cy) / obj.h
             }
           }
+        } else if (isMouseDown) {
+          console.log('here')
+          if (!newTag) {
+            let t = this.$refs.tagContent
+            obj = {
+              x: this._offset(t).left,
+              y: this._offset(t).top,
+              cx: e.clientX,
+              cy: e.clientY,
+              w: t.offsetWidth,
+              h: t.offsetHeight
+            }
+            let item = {
+              x: (e.clientX - obj.x) / obj.w,
+              y: (e.clientY - obj.y) / obj.h,
+              ex: (e.clientX - obj.x) / obj.w,
+              ey: (e.clientY - obj.y) / obj.h
+            }
+            this.tags.push(item)
+            tagItem = item
+            newTag = true
+          } else {
+            tagItem.ex = tagItem.x + (e.clientX - obj.cx) / obj.w
+            tagItem.ey = tagItem.y + (e.clientY - obj.cy) / obj.h
+          }
         }
       },
       clickSpot: function (e, i, item) {
@@ -253,11 +274,14 @@
         isMouseDown = false
         moveTag = false
         moveSpot = false
+        newTag = false
         this.showShade = false
       },
       clickContent: function () {
+        isMouseDown = true
         this.activeIndex = -1
         this.showMenu = false
+        console.log('ioio')
       },
       _offset: function (target) {
         let top, left
@@ -358,7 +382,8 @@
               .em-wrapper
                 .em
                   position absolute
-                  background-color rgba(7, 17, 27, 0.3)
+                  background-color rgba(0, 0, 0, 0.4)
+                  z-index: -1
                   width: 50000px
                   height 50000px
                   &:nth-child(1)
