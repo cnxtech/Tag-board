@@ -118,6 +118,7 @@
           this.$refs.dropMenu.style.left = e.clientX + 'px'
           this.$refs.dropMenu.style.top = e.clientY + 'px'
           this.showMenu = true
+          this.activeIndex = i
           return
         }
         isMouseDown = true
@@ -303,10 +304,13 @@
         this.showEdit = false
       },
       deleteTag: function () {
-
+        this.tags.splice(this.activeIndex, 1)
+        this.showMenu = false
       },
       editTag: function () {
-
+        this.showEdit = true
+        this.text = this.tags[this.activeIndex].text
+        this.showMenu = false
       },
       _offset: function (target) {
         let top, left
@@ -449,11 +453,15 @@
       .drop-menu
         position fixed
         width: 100px
-        padding 5px
         z-index: 100000
         text-align center
         background-color #fff
         box-shadow 0 16px 24px 2px rgba(0, 0, 0, .06), 0 6px 30px 5px rgba(0, 0, 0, .12), 0 8px 10px -7px rgba(0, 0, 0, .2)
+        .btn
+          width: 100%
+          border-radius 0
+        .btn:hover
+          background-color #aaa
     .input-box-wrapper
       position fixed
       left 0
