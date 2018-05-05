@@ -1,50 +1,60 @@
 <template>
   <div id="app">
     <div class="img-box">
-      <span class="img-body" ref="imgBody">
-        <img :src="imageUrl" ref="img" class="img" width="100%" height="100%">
-        <div class="tag-content" ref="tagContent" @mouseup="finishTag($event)" @mousemove="moveTag($event)"
-             @mousedown="clickContent">
-          <div class="tag-wrapper">
-              <div class="tag" v-for="(item, index) in tags" :key="index"
-                   :style="{
-               left: (item.ex-item.x > 0 ? item.x : item.ex)*100 + '%',
-               top: (item.ey-item.y > 0 ? item.y : item.ey)*100 + '%',
-               width: Math.abs(item.ex-item.x) * 100 + '%',
-               height: Math.abs(item.ey-item.y) * 100 + '%',
-               background: showShade ? 'rgba(0, 0, 0, 0)' : 'rgba(0, 0, 0, 0.3)'}"
-                   :class="{'active': index === activeIndex}"
-                   @mousedown.stop="clickTag($event, index, item)">
-              <div class="spot-wrapper">
-                <i class="spot" id="spot" v-for="i in 8" :key="i" @mousedown.stop="clickSpot($event, i, item)"></i>
-              </div>
-              <div class="em-wrapper" v-show="showShade && activeIndex === index">
-                <div class="em" v-for="i in 4" :key="i"></div>
+      <div class="img-body-wrapper">
+        <span class="img-body" ref="imgBody">
+          <img :src="imageUrl" ref="img" class="img" width="100%" height="100%">
+          <div class="tag-content" ref="tagContent" @mouseup="finishTag($event)" @mousemove="moveTag($event)"
+               @mousedown="clickContent">
+            <div class="tag-wrapper">
+                <div class="tag" v-for="(item, index) in tags" :key="index"
+                     :style="{
+                 left: (item.ex-item.x > 0 ? item.x : item.ex)*100 + '%',
+                 top: (item.ey-item.y > 0 ? item.y : item.ey)*100 + '%',
+                 width: Math.abs(item.ex-item.x) * 100 + '%',
+                 height: Math.abs(item.ey-item.y) * 100 + '%',
+                 background: showShade ? 'rgba(0, 0, 0, 0)' : 'rgba(255, 0, 0, 0.3)'}"
+                     :class="{'active': index === activeIndex}"
+                     @mousedown.stop="clickTag($event, index, item)">
+                <span class="tag-text" v-show="!(showShade && activeIndex === index)">{{ item.text }}</span>
+                <div class="spot-wrapper">
+                  <i class="spot" id="spot" v-for="i in 8" :key="i" @mousedown.stop="clickSpot($event, i, item)"></i>
+                </div>
+                <div class="em-wrapper" v-show="showShade && activeIndex === index">
+                  <div class="em" v-for="i in 4" :key="i"></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </span>
+        </span>
+      </div>
       <ul class="drop-menu" ref="dropMenu" v-show="showMenu">
         <div>
-          <div class="btn delete-btn">删除</div>
-          <div class="btn edit-btn">编辑</div>
+          <div class="btn delete-btn" @click="deleteTag">删除</div>
+          <div class="btn edit-btn" @click="editTag">编辑</div>
         </div>
       </ul>
     </div>
-    <div class="input-box" v-show="showEdit">
-      <div class="header">
-        <span class="title">编辑内容</span>
-        <span class="close-btn">X</span>
-      </div>
-      <div class="content">
-        <input class="input" type="text" value="" max="20">
-        <div>
-          <div class="btn confirm-btn">确定</div>
-          <div class="btn cancel-btn">取消</div>
+    <transition enter-active-class="bounceIn" leave-active-class="bounceOut" class="animated">
+      <div class="input-box-wrapper" v-show="showEdit">
+        <div class="input-box">
+          <div class="header">
+            <span class="title">编辑内容</span>
+            <button type="button" class="close close-btn" aria-label="Close" @click="showEdit = false">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="content">
+            <input type="text" class="input" v-model="text">
+            <div class="my-btn-group">
+              <button type="button" class="btn confirm-btn btn-primary btn-sm" @click="confirm">确定</button>
+              <button type="button" class="btn cancel-btn btn-outline-dark btn-sm" @click="showEdit = false">取消</button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </transition>
+
   </div>
 </template>
 
@@ -61,6 +71,7 @@
     name: "App",
     data () {
       return {
+        text: '',
         activeIndex: -1,
         showMenu: false,
         showEdit: false,
@@ -70,7 +81,8 @@
           x: 0.3,
           y: 0.3,
           ex: 0.5,
-          ey: 0.5
+          ey: 0.5,
+          text: 'opo'
         }],
         shade: false
       }
@@ -103,7 +115,6 @@
       clickTag: function (e, i, item) {
         // 右键点击，显示菜单
         if (e.which === 3) {
-          console.log(e.clientX)
           this.$refs.dropMenu.style.left = e.clientX + 'px'
           this.$refs.dropMenu.style.top = e.clientY + 'px'
           this.showMenu = true
@@ -227,7 +238,6 @@
             }
           }
         } else if (isMouseDown) {
-          console.log('here')
           if (!newTag) {
             let t = this.$refs.tagContent
             obj = {
@@ -248,6 +258,8 @@
             tagItem = item
             newTag = true
           } else {
+            this.showShade = true
+            this.activeIndex = this.tags.length - 1
             tagItem.ex = tagItem.x + (e.clientX - obj.cx) / obj.w
             tagItem.ey = tagItem.y + (e.clientY - obj.cy) / obj.h
           }
@@ -274,14 +286,27 @@
         isMouseDown = false
         moveTag = false
         moveSpot = false
-        newTag = false
+        if (newTag) {
+          this.showEdit = true
+          newTag = false
+        }
         this.showShade = false
       },
       clickContent: function () {
         isMouseDown = true
         this.activeIndex = -1
         this.showMenu = false
-        console.log('ioio')
+      },
+      confirm: function () {
+        tagItem.text = this.text
+        this.text = ''
+        this.showEdit = false
+      },
+      deleteTag: function () {
+
+      },
+      editTag: function () {
+
       },
       _offset: function (target) {
         let top, left
@@ -312,93 +337,115 @@
     .btn
       cursor pointer
     .img-box
-      .img-body
-        position relative
-        overflow hidden
-        display inline-block
-        width: 100%
-        height 300px
-        .img
-          position absolute
-          width 100%
-          height 100%
-        .tag-content
-          position: absolute
+      position fixed
+      left: 0
+      top 0
+      width 100%
+      height: 100%
+      background-color rgb(155, 155, 155)
+      .img-body-wrapper
+        display flex
+        justify-content center
+        align-items center
+        height: 100%
+        .img-body
+          position relative
+          overflow hidden
+          display inline-block
           width: 100%
-          height: 100%
-          z-index: 100
-          cursor crosshair
-          .tag-wrapper
-            position relative
+          height 300px
+          .img
+            position absolute
             width 100%
             height 100%
-            .tag
-              position absolute
-              cursor move
-              padding 1px
-              border 1px dashed #959595
-              .spot-wrapper
-                .spot
-                  visibility hidden
-                  display inline-block
+          .tag-content
+            position: absolute
+            width: 100%
+            height: 100%
+            z-index: 100
+            cursor crosshair
+            .tag-wrapper
+              position relative
+              width 100%
+              height 100%
+              .tag
+                position absolute
+                cursor move
+                padding 1px
+                border 1px dashed #959595
+                .tag-text
                   position absolute
-                  width: 9px
-                  height 9px
-                  cursor default !important
-                  border 1px solid #fff
-                  border-radius 50%
-                  background-color #959595
-                  &:nth-child(1)
-                    top: -6px
-                    left -6px
-                  &:nth-child(2)
-                    top: -6px
-                    left: 50%
-                    transform translateX(-5px)
-                  &:nth-child(3)
-                    top: -6px
-                    right: -6px
-                  &:nth-child(4)
-                    top: 50%
-                    left -6px
-                    transform translateY(-5px)
-                  &:nth-child(5)
-                    top: 50%
-                    right: -6px
-                    transform translateY(-5px)
-                  &:nth-child(6)
-                    bottom: -6px
-                    left -6px
-                  &:nth-child(7)
-                    bottom: -6px
-                    left: 50%
-                    transform translateX(-5px)
-                  &:nth-child(8)
-                    bottom: -6px
-                    right: -6px
-              &.active
-                .spot
-                  visibility visible
-              .em-wrapper
-                .em
-                  position absolute
-                  background-color rgba(0, 0, 0, 0.4)
-                  z-index: -1
-                  width: 50000px
-                  height 50000px
-                  &:nth-child(1)
-                    bottom 100%
-                    transform translateX(-10000px)
-                  &:nth-child(2)
-                    height: 100%
-                    left 100%
-                    transform translateY(-1px)
-                  &:nth-child(3)
-                    top: 100%
-                    transform translateX(-1px)
-                  &:nth-child(4)
-                    right: 100%
-                    transform translateY(-1px)
+                  left: 0
+                  top: 0
+                  width: 100%
+                  height: 100%
+                  display flex
+                  justify-content center
+                  align-items center
+                  color #fff
+                  font-size 16px
+                .spot-wrapper
+                  .spot
+                    visibility hidden
+                    display inline-block
+                    position absolute
+                    width: 9px
+                    height 9px
+                    cursor default !important
+                    border 1px solid #fff
+                    border-radius 50%
+                    background-color #959595
+                    &:nth-child(1)
+                      top: -6px
+                      left -6px
+                    &:nth-child(2)
+                      top: -6px
+                      left: 50%
+                      transform translateX(-5px)
+                    &:nth-child(3)
+                      top: -6px
+                      right: -6px
+                    &:nth-child(4)
+                      top: 50%
+                      left -6px
+                      transform translateY(-5px)
+                    &:nth-child(5)
+                      top: 50%
+                      right: -6px
+                      transform translateY(-5px)
+                    &:nth-child(6)
+                      bottom: -6px
+                      left -6px
+                    &:nth-child(7)
+                      bottom: -6px
+                      left: 50%
+                      transform translateX(-5px)
+                    &:nth-child(8)
+                      bottom: -6px
+                      right: -6px
+                &.active
+                  .spot
+                    visibility visible
+                .em-wrapper
+                  .em
+                    position absolute
+                    background-color rgba(0, 0, 0, 0.4)
+                    z-index: -1
+                    width: 50000px
+                    height 50000px
+                    &:nth-child(1)
+                      bottom 100%
+                      transform translateX(-10000px)
+                    &:nth-child(2)
+                      height: 100%
+                      left 100%
+                      transform translateY(-1px)
+                    &:nth-child(3)
+                      top: 100%
+                      transform translateX(-1px)
+                    &:nth-child(4)
+                      right: 100%
+                      transform translateY(-1px)
       .drop-menu
         position fixed
         width: 100px
@@ -407,28 +454,45 @@
         text-align center
         background-color #fff
         box-shadow 0 16px 24px 2px rgba(0, 0, 0, .06), 0 6px 30px 5px rgba(0, 0, 0, .12), 0 8px 10px -7px rgba(0, 0, 0, .2)
-    .input-box
-      width 250px
-      .header
-        width 100%
-        height 40px
-        padding 0 15px
-        line-height 40px
-        background-color #333
-        color: #fff
-        .title
-          float left
-        .close-btn
-          float right
-      .content
-        width: 100%
-        padding 0 15px
-        .input
-          margin: 20px 0
+    .input-box-wrapper
+      position fixed
+      left 0
+      top 0
+      width 100%
+      height 100%
+      display flex
+      justify-content center
+      z-index: 10000
+      animation-duration: 0.5s;
+      .input-box
+        width 300px
+        margin: auto
+        .header
+          width 100%
+          height 40px
+          padding 0 15px
+          line-height 40px
+          background-color #333
+          color: #fff
+          .title
+            float left
+          .close-btn
+            margin-top 7px
+            float right
+            color #fff
+        .content
           width: 100%
-        .confirm-btn
-          float: left
-          background-color #5f98ff
-        .cancel-btn
-          float right
+          padding 10px 20px 25px 20px
+          background-color #fff
+          .input
+            margin: 20px 0
+            width: 100%
+            padding 2px 8px
+            border 1px solid #888
+            border-radius 5px
+          .my-btn-group
+            display flex
+            justify-content space-between
+            .btn
+              width: 80px
 </style>
